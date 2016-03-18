@@ -1,14 +1,7 @@
 ## React + Webpack 工具
 	
-### 使用的技术
-##### 工具类
-+ Webpack
-+ Babel
-+ Less
-+ Browsersync
-
 ### 如何使用
-下载此项目后
+clone后运行
 ```
 npm i
 npm run dev
@@ -34,4 +27,4 @@ var MoveFiles = new CopyWebpackPlugin([
     {from: './app/img', to: './img'}
 ])
 ```
-另: 由于没有使用Html Webpack Plugin,而是用Copy Webpack Plugin来移动HTML,在APP文件夹中的HTML会引入了app.css文件,导致在DEV中报错,但是生产环境中无碍,强迫症患者请自行书写HTML Webpack plugin解决
+另: 由于没有使用Html Webpack Plugin,而是用Copy Webpack Plugin来移动HTML(为了不使单页面的朋友),会在开发中出现app.css读取失败的报错,实际上我们在打包的时候才会把css文件分离出js,开发模式中css样式是在js中的,生产环境中无碍,强迫症患者请自行书写HTML Webpack plugin解决
