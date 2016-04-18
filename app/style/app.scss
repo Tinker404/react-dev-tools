@@ -1,0 +1,24 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.warp {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+
+  &-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 50px;
+    color: #fff;
+    background: #159CD9;
+    border-radius: 7px;
+    transition: all .6s cubic-bezier(0.68, -0.55, 0.265, 1.65);
+  }
+}

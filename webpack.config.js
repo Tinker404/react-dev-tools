@@ -1,14 +1,27 @@
 var webpack = require('webpack');
 var path = require('path');
+var TARGET = process.env.npm_lifecycle_event;
+
+//webpack插件引入
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
-var TARGET = process.env.npm_lifecycle_event;
+
+//postcss插件引入
+var autoprefixer = require('autoprefixer');
+var calc = require("postcss-calc")
+var discardComments = require('postcss-discard-comments')
+var discardEmpty = require('postcss-discard-empty')
+
+//postcss插件配置列表
+var postCssConfig = function () {
+    return [autoprefixer, calc, discardComments, discardEmpty];
+}
 
 //这里复制你的静态文件
 var MoveFiles = new CopyWebpackPlugin([
     {from: './app/index.html', to: './'},
-    {from: './app/img', to: './img'}
+    {from: './app/img', to: './img'},
 ])
 
 //电脑调试(速度更快)
@@ -24,24 +37,44 @@ if (TARGET == 'dev') {
             publicPath: '/',
             filename: './app.js'
         },
+        devtool: "eval",
         module: {
             loaders: [
                 {
                     test: /\.js[x]?$/,
                     exclude: /node_modules/,
-                    loader: 'babel'
+                    loader: 'babel',
+                    //如不需要HMR功能请去除下方插件
+                    query: {
+                        plugins: [[
+                            'react-transform', {
+                                transforms: [{
+                                    transform: 'react-transform-hmr',
+                                    imports: ['react'],
+                                    locals: ['module']
+                                }]
+                            }]
+                        ]
+                    }
                 }, {
                     test: /\.less$/,
-                    loader: 'style!css!autoprefixer!less'
+                    loader: 'style!css!postcss-loader!less'
+                }, {
+                    test: /\.scss$/,
+                    loader: 'style!css!postcss-loader!sass'
                 }, {
                     test: /\.css/,
-                    loader: 'style!css'
+                    loader: 'style!postcss-loader!css'
                 }, {
                     test: /\.(png|jpg)$/,
                     loader: 'url?limit=6000'
+                }, {
+                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
+                    loader: 'url?prefix=font/&limit=10000'
                 }
-            ]
+            ],
         },
+        postcss: postCssConfig
     };
 }
 
@@ -55,7 +88,7 @@ if (TARGET == 'phone') {
             path: path.resolve(__dirname, 'dist'),
             filename: './app.js'
         },
-        devtool: "source-map",
+        devtool: "eval",
         module: {
             loaders: [
                 {
@@ -64,13 +97,19 @@ if (TARGET == 'phone') {
                     loader: 'babel'
                 }, {
                     test: /\.less$/,
-                    loader: 'style!css!autoprefixer!less'
+                    loader: 'style!css!postcss-loader!less'
+                }, {
+                    test: /\.scss$/,
+                    loader: 'style!css!postcss-loader!sass'
                 }, {
                     test: /\.css/,
-                    loader: 'style!css'
+                    loader: 'style!postcss-loader!css'
                 }, {
                     test: /\.(png|jpg)$/,
                     loader: 'url?limit=6000'
+                }, {
+                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
+                    loader: 'url?prefix=font/&limit=10000'
                 }
             ]
         },
@@ -82,7 +121,8 @@ if (TARGET == 'phone') {
                 }
             ),
             MoveFiles
-        ]
+        ],
+        postcss: postCssConfig
     };
 }
 
@@ -106,16 +146,19 @@ if (TARGET == "build") {
                     loader: 'babel'
                 }, {
                     test: /\.less$/,
-                    loader: ExtractTextPlugin.extract('style', 'css!autoprefixer!less')
+                    loader: ExtractTextPlugin.extract('style', 'css!postcss-loader!less')
+                }, {
+                    test: /\.scss$/,
+                    loader: ExtractTextPlugin.extract('style', 'css!postcss-loader!sass')
                 }, {
                     test: /\.css/,
-                    loader: ExtractTextPlugin.extract('style', 'css')
+                    loader: ExtractTextPlugin.extract('style', 'postcss-loader!css')
                 }, {
                     test: /\.(png|jpg)$/,
                     loader: 'url?limit=6000'
                 }, {
-                    test: /\.(woff|ttf|svg|eot)$/,
-                    loader: 'url?limit=10000'
+                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
+                    loader: 'url?prefix=font/&limit=10000'
                 }
             ]
         },
@@ -134,8 +177,7 @@ if (TARGET == "build") {
             }),
 
             MoveFiles
-        ]
+        ],
+        postcss: postCssConfig
     };
-
-
 }
