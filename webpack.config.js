@@ -1,183 +1,177 @@
-var webpack = require('webpack');
-var path = require('path');
-var TARGET = process.env.npm_lifecycle_event;
+const webpack = require('webpack');
+const path = require('path');
+const TARGET = process.env.npm_lifecycle_event;
 
 //webpack插件引入
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
-var BrowserSyncPlugin = require('browser-sync-webpack-plugin');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ClaenWebpackPlugin = require('clean-webpack-plugin');
 
 //postcss插件引入
-var autoprefixer = require('autoprefixer');
-var calc = require("postcss-calc")
-var discardComments = require('postcss-discard-comments')
-var discardEmpty = require('postcss-discard-empty')
+const autoprefixer = require('autoprefixer');
 
 //postcss插件配置列表
-var postCssConfig = function () {
-    return [autoprefixer, calc, discardComments, discardEmpty];
+const postCssConfig = function () {
+  return [autoprefixer];
 }
 
-//这里复制你的静态文件
-var MoveFiles = new CopyWebpackPlugin([
-    {from: './app/index.html', to: './'},
-    {from: './app/img', to: './img'},
-])
-
-//电脑调试(速度更快)
+//DEV
 if (TARGET == 'dev') {
-    module.exports = {
-        entry: [
-            'webpack/hot/dev-server',
-            'webpack-dev-server/client?http://localhost:8080',
-            path.resolve(__dirname, 'app/app.js')
-        ],
-        output: {
-            path: path.resolve(__dirname, 'dist'),
-            publicPath: '/',
-            filename: './app.js'
-        },
-        devtool: "eval",
-        module: {
-            loaders: [
-                {
-                    test: /\.js[x]?$/,
-                    exclude: /node_modules/,
-                    loader: 'babel',
-                    //如不需要HMR功能请去除下方插件
-                    query: {
-                        plugins: [[
-                            'react-transform', {
-                                transforms: [{
-                                    transform: 'react-transform-hmr',
-                                    imports: ['react'],
-                                    locals: ['module']
-                                }]
-                            }]
-                        ]
-                    }
-                }, {
-                    test: /\.less$/,
-                    loader: 'style!css!postcss-loader!less'
-                }, {
-                    test: /\.scss$/,
-                    loader: 'style!css!postcss-loader!sass'
-                }, {
-                    test: /\.css/,
-                    loader: 'style!postcss-loader!css'
-                }, {
-                    test: /\.(png|jpg)$/,
-                    loader: 'url?limit=6000'
-                }, {
-                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
-                    loader: 'url?prefix=font/&limit=10000'
-                }
-            ],
-        },
-        postcss: postCssConfig
-    };
+  module.exports = {
+    entry: [
+      // 'webpack/hot/dev-server',
+      // 'webpack-dev-server/client?http://localhost:8080',
+      path.resolve(__dirname, 'app/app.js')
+    ],
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      publicPath: '/',
+      filename: 'app.js'
+    },
+    devtool: "eval",
+    module: {
+      rules: [
+        {
+          test: /\.js[x]?$/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              plugins: [['react-transform', {
+                transforms: [{
+                  transform: 'react-transform-hmr',
+                  imports: ['react'],
+                  locals: ['module']
+                }]
+              }]]
+            }
+          }
+        }, {
+          test: /\.less$/,
+          use: [
+            'style-loader',
+            'css-loader',
+            {loader: 'postcss-loader', options: {plugins: postCssConfig}},
+            'less-loader'
+          ]
+        }, {
+          test: /\.(styl|stylus)/,
+          use: [
+            'style-loader',
+            'css-loader',
+            {loader: 'postcss-loader', options: {plugins: postCssConfig}},
+            'stylus-loader'
+          ]
+        }, {
+          test: /\.css/,
+          use: [
+            'style-loader',
+            'css-loader',
+            {loader: 'postcss-loader', options: {plugins: postCssConfig}},
+          ]
+        }, {
+          test: /\.(jpg|jpeg|png|gif|swf|woff|woff2|svg|eot|ttf)$/,
+          use: "file-loader"
+        }
+      ],
+    },
+    plugins: [
+      new webpack.ProvidePlugin({
+        React: 'react'
+      })
+    ]
+  };
 }
 
-//browersync手机调试
-if (TARGET == 'phone') {
-    module.exports = {
-        entry: [
-            path.resolve(__dirname, 'app/app.js')
-        ],
-        output: {
-            path: path.resolve(__dirname, 'dist'),
-            filename: './app.js'
-        },
-        devtool: "eval",
-        module: {
-            loaders: [
-                {
-                    test: /\.js[x]?$/,
-                    exclude: /node_modules/,
-                    loader: 'babel'
-                }, {
-                    test: /\.less$/,
-                    loader: 'style!css!postcss-loader!less'
-                }, {
-                    test: /\.scss$/,
-                    loader: 'style!css!postcss-loader!sass'
-                }, {
-                    test: /\.css/,
-                    loader: 'style!postcss-loader!css'
-                }, {
-                    test: /\.(png|jpg)$/,
-                    loader: 'url?limit=6000'
-                }, {
-                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
-                    loader: 'url?prefix=font/&limit=10000'
-                }
-            ]
-        },
-        plugins: [
-            new BrowserSyncPlugin({
-                    host: 'localhost',
-                    port: 3000,
-                    server: {baseDir: ['./dist']},
-                }
-            ),
-            MoveFiles
-        ],
-        postcss: postCssConfig
-    };
-}
-
-//打包生产环境文件
+// //打包生产环境文件
 if (TARGET == "build") {
-    module.exports = {
-        entry: [
-            path.resolve(__dirname, 'app/app.js')
-        ],
-        output: {
-            path: path.resolve(__dirname, 'dist'),
-            filename: './app.js',
-        },
-        //如有source-map需求,请激活下面一行代码
-        // devtool: "source-map",
-        module: {
-            loaders: [
-                {
-                    test: /\.js[x]?$/,
-                    exclude: /node_modules/,
-                    loader: 'babel'
-                }, {
-                    test: /\.less$/,
-                    loader: ExtractTextPlugin.extract('style', 'css!postcss-loader!less')
-                }, {
-                    test: /\.scss$/,
-                    loader: ExtractTextPlugin.extract('style', 'css!postcss-loader!sass')
-                }, {
-                    test: /\.css/,
-                    loader: ExtractTextPlugin.extract('style', 'postcss-loader!css')
-                }, {
-                    test: /\.(png|jpg)$/,
-                    loader: 'url?limit=6000'
-                }, {
-                    test: /\.woff|\.woff2|\.svg|.eot|\.ttf/,
-                    loader: 'url?prefix=font/&limit=10000'
-                }
+  module.exports = {
+    entry: [path.resolve(__dirname, 'app/app.js')],
+    output: {
+      path: path.resolve(__dirname, 'dist'),
+      // publicPath:'/',
+      filename: 'app-[hash].js'
+    },
+    devtool: "source-map",
+    module: {
+      rules: [
+        {
+          test: /\.js[x]?$/,
+          use: {loader: 'babel-loader'}
+        }, {
+          test: /\.less$/,
+          use: ExtractTextPlugin.extract({
+            fallback: 'style-loader',
+            use: [
+              {loader: 'css-loader', options: {minimize: true}},
+              {loader: 'postcss-loader', options: {plugins: postCssConfig}},
+              'less-loader'
             ]
+          })
+        }, {
+          test: /\.(styl|stylus)/,
+          use: ExtractTextPlugin.extract({
+            fallback: 'style-loader',
+            use: [
+              {loader: 'css-loader', options: {minimize: true}},
+              {loader: 'postcss-loader', options: {plugins: postCssConfig}},
+              'stylus-loader'
+            ]
+          })
+        }, {
+          test: /\.css/,
+          use: ExtractTextPlugin.extract({
+            fallback: 'style-loader',
+            use: [
+              {loader: 'css-loader', options: {minimize: true}},
+              {loader: 'postcss-loader', options: {plugins: postCssConfig}}
+            ]
+          })
+        }, {
+          test: /\.(jpg|jpeg|png|gif|swf|woff|woff2|svg|eot|ttf)$/,
+          use: `file-loader?name=[name]-[hash].[ext]&publicPath=&outputPath=img/`
+        }
+      ],
+    },
+    plugins: [
+      new ClaenWebpackPlugin(['dist'], {
+        root: path.resolve(__dirname),
+        verbose: true,
+        dry: false,
+      }),
+
+      new ExtractTextPlugin({
+        filename: 'app-[hash].css',
+        allChunks: true
+      }),
+
+      new webpack.optimize.UglifyJsPlugin({
+        minimize: true,
+        sourceMap: true,
+        compress: {
+          warnings: false,
+          screw_ie8: true
         },
-        plugins: [
-            new ExtractTextPlugin("app.css"),
-            new webpack.optimize.UglifyJsPlugin({
-                minimize: true,
-                compress: {
-                    warnings: false
-                }
-            }),
+        beautify: false,
+        mangle: {
+          screw_ie8: true,
+          keep_fnames: true
+        },
+        comments: false
+      }),
 
-            new webpack.DefinePlugin({
-                'process.env': {NODE_ENV: JSON.stringify("production")},
-                '__DEV__': false
-            }),
+      new webpack.ProvidePlugin({
+        React: 'react'
+      }),
 
-            MoveFiles
-        ],
-        postcss: postCssConfig
-    };
+      new webpack.DefinePlugin({
+        'process.env': {NODE_ENV: JSON.stringify("production")},
+        '__DEV__': false
+      }),
+
+      new HtmlWebpackPlugin({
+        template: path.resolve(__dirname, 'app/index.html'),
+        filename: 'index.html'
+      }),
+    ],
+  };
 }
